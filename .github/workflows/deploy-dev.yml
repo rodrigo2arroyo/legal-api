@@ -31,9 +31,8 @@ jobs:
         run: docker build -t legal-api:latest .
 
       - name: Push image to Lightsail
-        id: push-image
         run: |
-          JSON=$(aws lightsail push-container-image \
+          aws lightsail push-container-image \
             --service-name container-service-1 \
             --label legal-api \
             --image legal-api:latest \
@@ -80,7 +79,7 @@ jobs:
               "timeoutSeconds": 2,
               "intervalSeconds": 5,
               "path": "/",
-              "successCodes": "200-499"
+            "successCodes": "200-499"
             }
           }
           EOF
