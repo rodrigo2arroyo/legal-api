@@ -37,16 +37,23 @@ jobs:
             --service-name container-service-1 \
             --label legal-api \
             --image legal-api:latest \
-            --region ${{ secrets.AWS_REGION }} \
-            --output json)
+            --region ${{ secrets.AWS_REGION }}
 
-          echo "$JSON"
-          IMAGE_NAME=$(echo "$JSON" | jq -r '.image')
-          echo "image_name=$IMAGE_NAME" >> $GITHUB_OUTPUT
+      - name: Get pushed image name
+        id: get-image
+        run: |
+          IMAGE_NAME=$(aws lightsail get-container-images \
+            --service-name container-service-1 \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'sort_by(containerImages,&createdAt)[-1].image' \
+            --output text)
+          echo "Using image: $IMAGE_NAME"
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Deploy new revision to Lightsail
         run: |
           IMAGE_NAME='${{ steps.push-image.outputs.image_name }}'
+          echo "Deploying image: $IMAGE_NAME"
 
           cat > containers.json <<EOF
           {
