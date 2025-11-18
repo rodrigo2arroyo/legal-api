@@ -1,8 +1,7 @@
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-
-# 🧩 importa tu Base desde donde definas los modelos
+from app.core.config import settings
 from app.domain.models.models import Base  # ajusta la ruta según tu proyecto
 
 # Alembic Config
@@ -11,7 +10,7 @@ config = context.config
 # 💾 URL de conexión directa (local)
 config.set_main_option(
     "sqlalchemy.url",
-    "postgresql+psycopg2://postgres:Rmdcp0212.@ls-7c5f4a49653d8bcb1b6503d35413aba4c7aae80f.c81c86042ons.us-east-1.rds.amazonaws.com:5432/legal_db_dev"
+    settings.DATABASE_URL,
 )
 
 # Logging
