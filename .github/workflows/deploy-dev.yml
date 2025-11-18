@@ -22,9 +22,9 @@ jobs:
 
       - name: Install Lightsailctl helper
         run: |
-          curl "https://lightsailctl.aws.amazon.com/$(uname -s)_latest" -o lightsailctl
-          sudo mv lightsailctl /usr/local/bin/
-          sudo chmod +x /usr/local/bin/lightsailctl
+          curl "https://lightsailctl.aws.amazon.com/linux-amd64/latest/lightsailctl" -o lightsailctl
+          sudo chmod +x lightsailctl
+          sudo mv lightsailctl /usr/local/bin/lightsailctl
 
       - name: Build Docker image
         run: docker build -t legal-api:latest .
