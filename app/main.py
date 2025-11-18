@@ -1,10 +1,10 @@
-# app/main.py
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.db_async import engine
 from app.api.routes.auth import router as auth_router
 from app.api.routes.me import router as me_router
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup

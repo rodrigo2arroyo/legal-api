@@ -1,9 +1,11 @@
+# app/db_async.py
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.domain.models.models import Base  # tus modelos
-import os
+from app.domain.models.models import Base
+from app.core.config import settings
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/legal_db"
+print(settings.DATABASE_URL)
+DATABASE_URL = settings.DATABASE_URL
 
 # Engine global (una sola instancia por proceso)
 engine = create_async_engine(

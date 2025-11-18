@@ -11,7 +11,7 @@ config = context.config
 # 💾 URL de conexión directa (local)
 config.set_main_option(
     "sqlalchemy.url",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/legal_db"
+    "postgresql+psycopg2://postgres:Rmdcp0212.@ls-7c5f4a49653d8bcb1b6503d35413aba4c7aae80f.c81c86042ons.us-east-1.rds.amazonaws.com:5432/legal_db_dev"
 )
 
 # Logging
