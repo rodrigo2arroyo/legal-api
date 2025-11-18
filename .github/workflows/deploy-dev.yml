@@ -22,8 +22,8 @@ jobs:
 
       - name: Install Lightsailctl helper
         run: |
-          curl "https://lightsailctl.aws.amazon.com/linux-amd64/latest/lightsailctl" -o lightsailctl
-          sudo chmod +x lightsailctl
+          curl "https://lightsailctl.amazonaws.com/linux-amd64/latest/lightsailctl" -o lightsailctl
+          chmod +x lightsailctl
           sudo mv lightsailctl /usr/local/bin/lightsailctl
 
       - name: Build Docker image
