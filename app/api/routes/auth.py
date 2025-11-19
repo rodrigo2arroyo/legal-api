@@ -35,10 +35,25 @@ async def refresh_tokens(payload: RefreshIn, request: Request, db: AsyncSession 
 async def logout(
     refresh: RefreshIn,
     request: Request,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     ua = request.headers.get("user-agent", "unknown")
     ip = request.client.host if request.client else None
     service = AuthService(db)
-    await service.logout(refresh.refresh_token, user_agent=ua, ip=ip)
-    return {"ok": True}
+
+    try:
+        await service.logout(refresh.refresh_token, user_agent=ua, ip=ip)
+        return {"ok": True}
+    except HTTPException:
+        # Re-levanta los HTTPException tal cual (400/401/403, etc.)
+        raise
+    except Exception as e:
+        # Mientras debuggeas: loguea el error
+        import traceback
+        print("LOGOUT ERROR:", repr(e))
+        traceback.print_exc()
+        # Y devuelve un JSON de error (no "Internal Server Error" plano)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Logout failed",
+        )
