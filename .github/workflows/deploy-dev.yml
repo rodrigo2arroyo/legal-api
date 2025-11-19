@@ -62,7 +62,8 @@ jobs:
               },
               "environment": {
                 "ENV": "dev",
-                "DATABASE_URL": "${{ secrets.DATABASE_URL_DEV }}"
+                "DATABASE_URL": "${{ secrets.DATABASE_URL_DEV }}",
+                "JWT_PRIVATE": "${{ secrets.JWT_PRIVATE_DEV }}"
               }
             }
           }
