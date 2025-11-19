@@ -17,7 +17,6 @@ class AuthService:
         self.sessions = SessionsRepo(db)
 
     async def social_login(self, payload: SocialLoginIn) -> TokenPairOut:
-        # 1) Verificar ID token contra IdP
         if payload.provider == "google":
             profile = await verify_google_id_token(payload.id_token)
         elif payload.provider == "apple":
