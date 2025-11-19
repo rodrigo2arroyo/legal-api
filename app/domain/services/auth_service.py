@@ -1,7 +1,10 @@
 # app/services/auth_service.py
 import os
 from datetime import timedelta
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.domain.repositories.users_repo import UsersRepo
 from app.domain.repositories.sessions_repo import SessionsRepo
 from app.api.core.security import (
@@ -17,7 +20,6 @@ class AuthService:
         self.sessions = SessionsRepo(db)
 
     async def social_login(self, payload: SocialLoginIn) -> TokenPairOut:
-        # 1) Verificar ID token contra IdP
         if payload.provider == "google":
             profile = await verify_google_id_token(payload.id_token)
         elif payload.provider == "apple":
@@ -110,9 +112,23 @@ class AuthService:
         return TokenPairOut(access_token=access, refresh_token=new_raw, expires_in=ttl)
 
     async def logout(self, raw_refresh: str, user_agent: str | None, ip: str | None):
-        jti, _ = raw_refresh.split(".", 1)
+        # 1) Validar formato
+        try:
+            jti, _ = raw_refresh.split(".", 1)
+        except ValueError:
+            # token mal formado → error controlado, no 500
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Malformed refresh token",
+            )
+
+        # 2) Buscar sesión
         session = await self.sessions.get_active_by_jti(jti)
-        if session:
-            await self.sessions.revoke_chain(session.jti)
-            await self.db.commit()
+        if not session:
+            # refresh ya revocado / no existe → no es error de servidor
+            return
+
+        # 3) Revocar cadena
+        await self.sessions.revoke_chain(session.jti)
+        await self.db.commit()
 

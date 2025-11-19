@@ -1,0 +1,91 @@
+name: Deploy DEV to Lightsail
+
+on:
+  push:
+    branches: [develop]   # se dispara en cada push a develop
+  workflow_dispatch:       # y también manualmente desde Actions
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Lightsailctl helper
+        run: |
+          sudo curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" \
+            -o "/usr/local/bin/lightsailctl"
+          sudo chmod +x /usr/local/bin/lightsailctl
+          /usr/local/bin/lightsailctl --version
+
+      - name: Build Docker image
+        run: docker build -t legal-api:latest .
+
+      - name: Push image to Lightsail
+        run: |
+          aws lightsail push-container-image \
+            --service-name container-service-1 \
+            --label legal-api \
+            --image legal-api:latest \
+            --region ${{ secrets.AWS_REGION }}
+
+      - name: Deploy new revision to Lightsail
+        run: |
+          IMAGE_NAME=$(aws lightsail get-container-images \
+            --service-name container-service-1 \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'sort_by(containerImages,&createdAt)[-1].image' \
+            --output text)
+
+          echo "Deploying image: $IMAGE_NAME"
+
+          if [ -z "$IMAGE_NAME" ] || [ "$IMAGE_NAME" = "None" ]; then
+            echo "ERROR: No image found for container service container-service-1"
+            exit 1
+          fi
+
+          cat > containers.json <<EOF
+          {
+            "legal-api": {
+              "image": "$IMAGE_NAME",
+              "ports": {
+                "8000": "HTTP"
+              },
+              "environment": {
+                "ENV": "dev",
+                "DATABASE_URL": "${{ secrets.DATABASE_URL_DEV }}",
+                "JWT_PRIVATE": "${{ secrets.JWT_PRIVATE_DEV }}"
+              }
+            }
+          }
+          EOF
+
+          cat > public-endpoint.json <<EOF
+          {
+            "containerName": "legal-api",
+            "containerPort": 8000,
+            "healthCheck": {
+              "healthyThreshold": 2,
+              "unhealthyThreshold": 2,
+              "timeoutSeconds": 2,
+              "intervalSeconds": 5,
+              "path": "/",
+            "successCodes": "200-499"
+            }
+          }
+          EOF
+
+          aws lightsail create-container-service-deployment \
+            --service-name container-service-1 \
+            --region ${{ secrets.AWS_REGION }} \
+            --containers file://containers.json \
+            --public-endpoint file://public-endpoint.json
